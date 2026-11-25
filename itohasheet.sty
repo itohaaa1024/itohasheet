@@ -1,0 +1,298 @@
+% itohasheet.sty
+% Copyright (C) 2026 〈itoha〉
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3c
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%   https://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2008 or later.
+%
+% This work has the LPPL maintenance status `maintained'.
+%
+% The Current Maintainer of this work is itoha〉.
+%
+% This work consists of the files itohasheet.sty
+% and itohasheet-manual.tex.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{itohasheet}[2026/11/23 ver.1.1]
+
+% 必要なパッケージ
+\RequirePackage{iftex}
+\RequirePackage{geometry}
+\RequirePackage{multicol}
+\RequirePackage{tikz}
+\usetikzlibrary{calc}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{most}
+
+% フォント関係の設定
+\ifLuaTeX
+  \RequirePackage{luatexja,luatexja-fontspec,luatexja-otf}
+  \IfFontExistsTF{UDDigiKyokashoProN-Regular}
+  {\setmainjfont[BoldFont=UDDigiKyokashoProN-Bold]{UDDigiKyokashoProN-Regular}}
+  {}
+  \IfFontExistsTF{PUDReiminPr6N-Regular}
+  {\newjfontfamily\reimin{PUDReiminPr6N-Regular}}
+  {\newcommand{\reimin}{\rmfamily}}
+  \else
+  \RequirePackage{jlreq-deluxe}
+    \RequirePackage[relfont,usecmapforalphabet]{pxchfon}
+  \newcommand{\reimin}{\rmfamily}
+  \fi
+
+% ceoパッケージの導入
+\ifLuaTeX
+  \RequirePackage[OT1]{fontenc}
+  \RequirePackage{ceo}
+  \pdfextension mapfile {+ceo.map}
+  \else
+    \RequirePackage[OT1]{fontenc}
+    \RequirePackage{ceo}
+  \fi
+
+\RequirePackage{enumitem}
+
+
+% オプション：分割数の決定（デフォルトは3）
+\newcommand*{\ws@divide}{3}
+\newcommand*{\ws@setdivide}[1]{%
+  \edef\ws@tmp{\number\numexpr#1\relax}%
+  \ifnum\ws@tmp<2
+    \PackageError{itohasheet}{divide=#1 は使えません}{2〜4の整数を指定してください。}%
+  \else\ifnum\ws@tmp>4
+    \PackageError{itohasheet}{divide=#1 は使えません}{2〜4の整数を指定してください。}%
+  \else
+    \global\let\ws@divide\ws@tmp
+  \fi\fi}
+
+% オプション：解答表示（氏名のところに「解答例（デフォルト）」と表示）
+\newif\ifws@answer \ws@answerfalse
+
+\DeclareKeys[itohasheet]{
+  divide.code = \ws@setdivide{#1},
+  divide.code = \ws@setdivide{#1},
+  answer.if   = ws@answer,
+}
+\ProcessKeyOptions[itohasheet]
+
+% 文書の基本設定
+\geometry{top=20mm,bottom=12.5mm,left=7.5mm,right=7.5mm}
+\setlength{\columnsep}{0.5\zw}
+\setlength{\parindent}{0\zw}
+\pagestyle{empty}
+
+
+
+% 環境：分割（オプションの分割数に対応）
+\NewDocumentEnvironment{分割}{O{\ws@divide}}
+  {\begin{multicols*}{#1}}
+  {\end{multicols*}}
+
+
+% 寸法
+\newlength{\ws@side}
+  \setlength{\ws@side}{7.5mm}       % 左右の余白
+\newlength{\ws@headline}
+  \setlength{\ws@headline}{17.5mm}  % 上の余白
+\newlength{\ws@footline}
+  \setlength{\ws@footline}{12.5mm}    % 下の余白
+
+% タイトル
+\newcommand*{\ws@title}{【ここにメインタイトルを記入】}
+\newcommand*{\ws@answername}{}
+\NewDocumentCommand{\タイトル}{m O{解答例}}{%
+  \gdef\ws@title{#1}%
+  \IfValueT{#2}{\gdef\ws@answername{#2}}}
+
+% 枠の表示・非表示
+\newif\ifws@frame     \ws@frametrue
+\newif\ifws@skipthis  \ws@skipthisfalse
+\newcommand{\ShowWorksheetFrame}{\global\ws@frametrue}
+\newcommand{\HideWorksheetFrame}{\global\ws@framefalse}
+\newcommand{\NoWorksheetFrameThisPage}{\global\ws@skipthistrue}
+
+\AddToHook{shipout/background}{%
+  \ifws@skipthis
+    \global\ws@skipthisfalse
+  \else\ifws@frame
+  \begin{tikzpicture}[overlay, remember picture]
+    % 座標を設定
+    \coordinate (NW) at (current page.north west);
+    \coordinate (NE) at (current page.north east);
+    \coordinate (S)  at (current page.south);
+    \coordinate (L)  at ([xshift=\ws@side,yshift=-\ws@headline]NW);
+    \coordinate (R)  at ([xshift=-\ws@side,yshift=-\ws@headline]NE);
+
+    % ヘッダーの線
+    \draw[line width=0.6pt] (L) -- (R);
+
+    % 段区切り線（オプションの分割数に対応）
+    \pgfmathtruncatemacro{\ws@lastline}{\ws@divide-1}%
+    \foreach \ws@i in {1,...,\ws@lastline}{%
+      \coordinate (D) at ($(L)!\ws@i/\ws@divide!(R)$);
+      \draw[line width=0.6pt] (D) -- ([yshift=\ws@footline]D |- S);
+    }
+
+    % メインタイトルをnode
+    \node[anchor=west,font=\reimin\large] at ([yshift=6mm]L) {\ws@title};
+
+    % 氏名の記入
+    \node[anchor=base east,font=\reimin\large,inner sep=0pt] 
+      (ws@nameclose) at ([xshift=-1mm,yshift=5mm]R) {）};
+    \node[anchor=base east,font=\reimin\large,inner sep=0pt,minimum width=55mm]
+      (ws@namebox) at (ws@nameclose.base west) {\strut};
+    \node[anchor=base east,font=\reimin\large,inner sep=0pt]
+      at (ws@namebox.base west) {（\hspace{6truemm}）\hspace{-0.55\zw}組\hspace{-0.55\zw}（\hspace{6truemm}）\hspace{-0.55\zw}番\hspace{5truemm}名前\hspace{-0.55\zw}（};
+
+    % 解答表示：名前欄のカッコのちょうど真ん中
+    \ifws@answer
+      \node[anchor=base,color=magenta,font=\large,inner sep=0pt]
+        at (ws@namebox.base) {\ws@answername};
+    \fi
+
+    % ページ番号
+    \node at ([yshift=5mm]S) {\raisebox{0.25ex}{-}\,\thepage\,\raisebox{0.25ex}{-}};
+  \end{tikzpicture}%
+  \fi\fi
+}
+
+
+% ============================================================
+% 
+% ============================================================
+% 問題文挿入用ボックス
+\DeclareTColorBox{dummybox}{O{}}{%
+  blank,breakable,
+  top=0mm,bottom=0mm,left=0mm,right=0mm,
+  boxsep=0mm,#1
+}
+
+% 問題番号
+\newcommand{\mondaibangou}[1]{%
+  \setlength{\fboxrule}{0.6pt}%
+  \setlength{\fboxsep}{0.5pt}%
+  \fbox{\parbox[c][0.92\zw][c]{0.925\zw}{\centering\small #1}}}
+
+% 問題番号カウンタ
+\newcounter{mondai}
+
+% 問題文挿入
+\NewDocumentEnvironment{問題挿入}{O{1} m d<>}
+  {\begin{dummybox}%
+    \stepcounter{mondai}
+    \mondaibangou{#2}
+    \IfValueT{#3}{[#3]}\par}
+  {\end{dummybox}
+  \vspace{#1\zw}}
+
+% 穴埋め枠
+\NewDocumentCommand{\穴埋め枠}{O{3.25} m}{%
+  \setlength{\fboxrule}{0.8pt}%
+  \setlength{\fboxsep}{-0.4pt}%
+  \,\framebox[#1\zw][c]{\mbox{#2}}\,}
+
+% 
+\NewDocumentCommand{\解答欄}{O{black}}{%
+  \raisebox{0.2ex}{\tikz[baseline=(X.base)]\node[
+    draw=#1,line width=0.6pt,text=#1,inner sep=0pt,rounded corners=1pt,
+    font=\footnotesize\sffamily\gtfamily,
+    minimum width=3\zw,minimum height=1\zw](X){解答欄};}\hspace{1\zw}%
+}
+
+% 解答文挿入用ボックス
+\NewDocumentCommand{\解答}{O{magenta}}{%
+  \raisebox{0.2ex}{\tikz[baseline=(X.base)]\node[%
+    draw=#1,line width=0.6pt,text=#1,inner sep=0pt,rounded corners=1pt,%
+    font=\footnotesize\sffamily\gtfamily,%
+    minimum width=2\zw,minimum height=1\zw](X){解答};}\hspace{1\zw}%
+  }
+
+% 解答文挿入
+\NewDocumentEnvironment{解答挿入}{}
+  {\begin{dummybox}[coltext=magenta]\解答}
+  {\end{dummybox}}
+
+
+
+
+% ============================================================
+% 
+% ============================================================
+\DeclareRobustCommand*\zenkakunum[1]{\ifcase#1\or \zenkakuichi \or \zenkakuni \or \zenkakusan \or \zenkakushi \or \zenkakugo \or \zenkakuroku \or \zenkakushichi \or \zenkakuhachi \or \zenkakukyu \or \zenkakujyu \or \zenkakujyuichi \or \zenkakujyuni \or \zenkakujyusan \or \zenkakujyushi \or \zenkakujyugo \or \zenkakujyuroku \or \zenkakujyushichi \or \zenkakujyuhachi \or \zenkakujyukyu \or \zenkakunijyu \fi}
+
+\DeclareRobustCommand*\toanum[1]{\ifcase#1\or \toaichi \or \toani \or \toasan \or \toashi \or \toago \or \toaroku \or \toashichi \or \toahachi \or \toakyu \or \toajyu \or \toajyuichi \or \toajyuni \or \toajyusan \or \toajyushi \or \toajyugo \or \toajyuroku \or \toajyushichi \or \toajyuhachi \or \toajyukyu \or \toanijyu \fi}
+
+\setlist[enumerate,1]{%
+  label=\protect\zenkakunum{\arabic*},
+  topsep=0\zw,
+  leftmargin=1\zw,
+  listparindent=0\zw,
+  labelsep=1\zw,
+  itemindent=1\zw,
+  itemsep=0\zw
+}
+
+\setlist[enumerate,2]{%
+  label=\protect\toanum{\arabic*},
+  topsep=0\zw,
+  leftmargin=1\zw,
+  listparindent=0\zw,
+  labelsep=1\zw,
+  itemindent=1\zw,
+  itemsep=0\zw
+}
+
+\setlist[itemize,1]{%
+  label=•,
+  topsep=0.5\zw,
+  leftmargin=2\zw,
+  listparindent=1\zw,
+  labelsep=0.5\zw,
+  itemindent=0\zw,
+  itemsep=0\zw
+}
+
+% \DeclareRobustCommand*\kakkonum[1]{\ifcase#1\or \kakkoichi \or \kakkoni \or \kakkosan \or \kakkoshi \or \kakkogo \or \kakkoroku \or \kakkoshichi \or \kakkohachi \or \kakkokyu \or \kakkojyu \or \kakkojyuichi \or \kakkojyuni \or \kakkojyusan \or \kakkojyushi \or \kakkojyugo \or \kakkojyuroku \or \kakkojyushichi \or \kakkojyuhachi \or \kakkojyukyu \or \kakkonijyu \fi}
+
+% \DeclareRobustCommand*\tokeinum[1]{\ifcase#1\or \tokeiichi \or \tokeini \or \tokeisan \or \tokeishi \or \tokeigo \or \tokeiroku \or \tokeishichi \or \tokeihachi \or \tokeikyu \or \tokeijyu \or \tokeijyuichi \or \tokeijyuni \or \tokeijyusan \or \tokeijyushi \or \tokeijyugo \or \tokeijyuroku \or \tokeijyushichi \or \tokeijyuhachi \or \tokeijyukyu \or \tokeinijyu \fi}
+
+% \setlist[enumerate,1]{%
+%   label=\protect\kakkonum{\arabic*},
+%   topsep=0\zw,
+%   leftmargin=2\zw,
+%   listparindent=0\zw,
+%   labelsep=1\zw,
+%   itemindent=1\zw,
+%   itemsep=0\zw
+% }
+
+% \setlist[enumerate,2]{%
+%   label=\protect\tokeinum{\arabic*},
+%   topsep=0\zw,
+%   leftmargin=2\zw,
+%   listparindent=0\zw,
+%   labelsep=1\zw,
+%   itemindent=1\zw,
+%   itemsep=0\zw
+% }
+
+\endinput
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
