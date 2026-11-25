@@ -1,0 +1,305 @@
+\documentclass[fontsize=9pt]{jlreq}
+\usepackage[divide=2,answer=true]{itohasheet}
+
+\setsansfont{PFutoGoB101Pr6N-Medium}
+\setsansjfont{PFutoGoB101Pr6N-Medium}
+
+\usepackage[colorlinks=true, linkcolor=cyan, urlcolor=cyan]{hyperref}
+
+\usepackage{booktabs,itocolorbox}
+\usepackage{fancyvrb}
+\newenvironment{code}
+  {\VerbatimEnvironment
+   \begin{itocolorbox1}{Code}%
+   \begin{Verbatim}[fontsize=\small]}
+  {\end{Verbatim}\end{itocolorbox1}}
+
+\newcommand{\pkgname}{itohasheet}
+\newcommand{\pkg}[1]{\textsf{#1}}
+\newcommand{\cs}[1]{\texttt{\char92 #1}}
+\newcommand{\meta}[1]{\textrm{〈#1〉}}
+\newcommand{\marg}[1]{\texttt{\char123}\meta{#1}\texttt{\char125}}
+\newcommand{\oarg}[1]{\texttt{[}\meta{#1}\texttt{]}}
+\newcommand{\env}[1]{\texttt{#1}}
+\newcommand{\opt}[1]{\texttt{#1}}
+
+\newcommand{\begenv}[1]{\cs{begin}\texttt{\char123 #1\char125}}
+\タイトル{\pkgname.sty 利用の手引き（ver.1.1）}[配布用]
+
+
+\begin{document}
+\begin{分割}
+
+% ------------------------------------------------------------
+\section{はじめに}
+\subsection{概要}
+このパッケージは，2〜4段の多段組みの文書を作成するためのパッケージです。
+横書きの文書のみに対応していて，縦書きの文書には対応していないことに注意してください。
+使うことができる\LaTeX{}エンジンは(u)p\LaTeX{}とLua\LaTeX{}です。
+一応，まだテスト段階なので不具合や不備があるかもしれませんがご了承ください。
+
+なお，この手引きは\pkg{\pkgname.sty}を用いて作成されていて，実行例はこの手引きで代えさせてください。
+
+\subsection{開発の動機}
+このパッケージを作成した理由としては，\LaTeX{}の文書クラスに標準で備わっているtwocolumnオプションや，multicolパッケージを用いたデザインがあまり好みではなく，自分でTi\textit{k}Zなどを用いてデザインを一から描画してみたいと思ったからです。Ti\textit{k}Zを使うとかなり自由度が上がり，自分が思うような装飾ができると思ったからです。
+加えて，高校時代に慣れ親しんだプリントのレイアウトのデザインを\LaTeX{}で再現できないか，という好奇心も作ってみたいと思ったきっかけです。
+そのため，数学や理科の演習用のプリントに利用しやすいことが特徴です。
+
+\subsection{特徴}
+\begin{itemize}
+  \item 簡単に多段組みの文書が作成できる
+  \item 分割数によってデザインも自動で変わる
+  \item 理数系の科目のプリントに簡単に応用できる
+  \item オプションによって氏名の部分に任意に文字を表示するかどうかを切り替えられる
+\end{itemize}
+
+\subsection{できないこと}
+\begin{itemize}
+  \item 縦書きの文書
+  \item 1段，または5段以上の段組み
+  \item ページごとに異なる段数の枠を描くこと（\ref{sec:caution}節を参照）
+\end{itemize}
+
+
+\section{準備}
+\subsection{動作環境}
+\begin{itemize}
+  \item エンジン：Lua\LaTeX{}，または(u)p\LaTeX{}（+ dvipdfmx）
+  \item 文書クラス：\pkg{jlreq}（(u)p\LaTeX{}では\pkg{jlreq-deluxe}を読み込むため必須）
+  \item 動作確認：TeX Live 2026
+\end{itemize}
+
+\subsection{依存パッケージ}
+\pkg{\pkgname}は内部で次のパッケージを読み込みます。あらかじめインストールされている必要があります。
+\begin{itemize}
+  \item 共通：\pkg{iftex}，\pkg{geometry}，\pkg{multicol}，\pkg{tikz}（\pkg{calc}ライブラリ），\pkg{tcolorbox}（\pkg{most}ライブラリ），\pkg{enumitem}，\pkg{fontenc}，\pkg{ceo}
+  \item Lua\LaTeX{}のとき：\pkg{luatexja}，\pkg{luatexja-fontspec}，\pkg{luatexja-otf}
+  \item (u)p\LaTeX{}のとき：\pkg{jlreq-deluxe}，\pkg{pxchfon}
+\end{itemize}
+
+\subsection{フォント}
+Lua\LaTeX{}では次のフォントを使用します。
+\begin{itemize}
+  \item 本文：UDデジタル教科書体（UDDigiKyokashoProN）
+  \item タイトル・氏名欄：UD黎ミン（PUDReiminPr6N）
+\end{itemize}
+なお，上記のフォントがインストールされていない場合は，標準のフォントのままになります。
+(u)p\LaTeX{}では，フォントは\pkg{pxchfon}の設定に従い，タイトル・氏名欄は本文と同じ明朝体になります。
+
+
+\section{基本的な使い方}
+\subsection{読み込み方}
+プリアンブルで次のように読み込みます。
+\begin{code}
+\usepackage[divide=3,answer]{itohasheet}
+\end{code}
+
+% \newcolumn
+
+\subsection{最小の使用例}
+次の文書をコピーしてコンパイルすれば，3段組みのプリントが1枚できます。
+\begin{code}
+\documentclass[
+  paper=b4j,
+  landscape,
+  fontsize=9pt
+]{jlreq}
+\usepackage{itohasheet}
+\タイトル{期末考査　対策プリント}
+\begin{document}
+\begin{分割}
+\begin{問題挿入}{1}
+  次の関数の最大値を求めよ。
+  \begin{enumerate}
+    \item $y=-x^2+4x$
+    \item $y=x^2-2x+3$ ($0\leq x \leq 3$)
+  \end{enumerate}
+\end{問題挿入}
+\end{分割}
+\end{document}
+\end{code}
+
+\section{パッケージオプション}
+\begin{center}
+% \small
+\begin{tabular}{@{}lll@{}}
+  \toprule
+  オプション & 値 & 既定値 \\
+  \midrule
+  \verb|divide| & 2, 3, 4 & 3 \\
+  \verb|answer| & true, false & false \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{\texttt{divide}}
+分割数を2から4の間の整数値で設定します。
+もし2〜4以外の値を指定した場合にはエラーになります。
+
+\subsection{\texttt{answer}}
+指定すると，氏名欄のカッコの中央に\cs{タイトル}の第2引数の文字（既定は「解答例」）がマゼンタで表示されます。値を省略して\verb|answer|とだけ書くと\verb|answer=true|の意味になります。
+なお，表示が切り替わるのは氏名欄の部分だけであり，回答が挿入されるか否かは関係ないことに注意してください。
+
+% \newcolumn
+
+\section{環境}
+\subsection{分割}
+\begin{code}
+\begin{分割}[段数]
+  本文
+\end{分割}
+\end{code}
+本文を指定した分割数の段組みにします。
+段数を省略すると\verb|divide|オプションの値になります。
+中身は\pkg{multicol}の\verb|multicols*|環境なので，段の高さはそろえられず，左の段から順に詰めていきます。段を途中で変えたいときは\verb|\newcolumn|を使ってください。
+
+\subsection{問題挿入}
+\begin{code}
+\begin{問題挿入}[空き]{番号}<補足>
+  問題文
+\end{問題挿入}
+\end{code}
+\begin{itemize}
+  \item \textbf{空き}：環境の後ろに入れる空白（単位は\verb|\zw|）。既定値は1。
+  \item \textbf{番号}：四角で囲んで表示する問題番号。
+  \item \textbf{補足}：省略可。\verb|< >|で囲んで指定し，番号のあとに［ ］つきで表示されます（配点や出典など）。
+\end{itemize}
+ページや段をまたいで分割できます。
+補足を\verb|< >|で指定するようにしているので，問題文が\verb|[|で始まっていても補足と誤認されることはありません。
+
+\medskip
+\noindent\textbf{実行例}
+\begin{code}
+\begin{問題挿入}{1}<各5点>
+次の式を展開せよ。
+\begin{enumerate}
+  \item $(x+1)^2$
+  \item $(x-2)(x+3)$
+\end{enumerate}
+\end{問題挿入}
+\end{code}
+\begin{問題挿入}{1}<各5点>
+次の式を展開せよ。
+\begin{enumerate}
+  \item $(x+1)^2$
+  \item $(x-2)(x+3)$
+\end{enumerate}
+\end{問題挿入}
+
+\subsection{解答挿入}
+\begin{code}
+\begin{解答挿入}
+  解答文
+\end{解答挿入}
+\end{code}
+先頭に\解答{\hspace{-1\zw}}のラベルをつけて，解答文（数式も含む）をマゼンタで表示します。
+
+\medskip
+\noindent\textbf{実行例}
+\begin{解答挿入}
+(1)\ $x^2+2x+1$\quad (2)\ $x^2+x-6$
+\end{解答挿入}
+
+% ------------------------------------------------------------
+\section{コマンド}
+\subsection{タイトルと氏名欄}
+\begin{code}
+\タイトル{メインタイトル}[解答表示]
+\end{code}
+\begin{itemize}
+  \item \textbf{メインタイトル}：ヘッダーの左に表示する文字。指定しないと「【ここにメインタイトルを記入】」と表示されます。
+  \item \textbf{解答表示}：\verb|answer|オプションのとき氏名欄に出す文字。既定値は「解答例」。
+\end{itemize}
+枠はページを出力するときに描かれるので，文書の途中で\cs{タイトル}を書き直すと，それ以降のページのタイトルが変わります。
+
+\subsection{枠の表示・非表示}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+  \toprule
+  コマンド & はたらき \\
+  \midrule
+  \verb|\ShowWorksheetFrame| & 以降のページに枠を描く（既定） \\
+  \verb|\HideWorksheetFrame| & 以降のページの枠を消す \\
+  \verb|\NoWorksheetFrameThisPage| & 次に出力されるページだけ枠を消す \\
+  \bottomrule
+\end{tabular}
+\end{center}
+「枠」には，ヘッダーの線，段の区切り線，タイトル，氏名欄，ページ番号がすべて含まれます。
+
+\subsection{穴埋め枠}
+\begin{code}
+\穴埋め枠[幅]{中身}
+\end{code}
+文中に穴埋め用の枠を作ります。幅は\verb|\zw|単位の数値で，既定値は3.25です。中身を空にすれば空欄になります。
+
+\medskip
+\noindent\textbf{実行例}：\穴埋め枠{ア}，\穴埋め枠{イウ}
+
+\subsection{解答欄・解答のラベル}
+\begin{code}
+\解答欄[色]
+\解答[色]
+\end{code}
+角の丸いラベルを表示します。
+色の既定値は解答欄が黒，解答がマゼンタです。
+
+\medskip
+\noindent\textbf{実行例}：\解答欄 \解答 \解答欄[blue]
+
+\subsection{問題番号}
+\begin{code}
+\mondaibangou{番号}
+\end{code}
+四角で囲んだ問題番号だけを表示します。問題挿入環境の中で使われているものと同じです。
+
+\medskip
+\noindent\textbf{実行例}：\mondaibangou{2}\mondaibangou{3}
+
+\subsection{箇条書きの番号}
+\pkg{\pkgname}は\pkg{enumitem}を使って\verb|enumerate|環境の番号を次のように変更します。
+\begin{itemize}
+  \item 1段目：\verb|\zenkakunum|による番号
+  \item 2段目：\verb|\toanum|による番号
+\end{itemize}
+\verb|\zenkakunum{n}|，\verb|\toanum{n}|は単独でも使えます。どちらも\textbf{1〜20まで}に対応しています。
+
+% ------------------------------------------------------------
+\section{注意点}\label{sec:caution}
+\begin{itemize}
+  \item \textbf{枠の段数は\texttt{divide}オプションで決まります。}\begenv{分割}\verb|[2]|のように環境側で段数を変えても枠の縦線は変わらないので，本文と罫線がずれます。段数を変えるときはオプションのほうを変えてください。
+  \item 余白は\pkg{geometry}で固定されていて，枠の位置もそれに合わせてあります。\verb|\geometry|で余白を変えると枠と本文がずれます。用紙サイズの変更は問題ありません。
+  \item 段落の字下げは0になっています。字下げしたい段落では\verb|\hspace{1\zw}|などを使ってください。
+  \item \verb|enumerate|の項目が21個以上になると，21番目以降の番号が表示されません。
+  \item \verb|\NoWorksheetFrameThisPage|は「次に出力されるページ」に効きます。ページの終わり近くで書くと，意図したページの次のページに効くことがあります。
+  % \item 文書クラスのページ番号と枠のページ番号が二重に表示される場合は，\verb|\pagestyle{empty}|を指定してください。
+\end{itemize}
+
+% ------------------------------------------------------------
+\section{謝辞・参考にしたもの}
+レイアウトは，高校時代に使っていた演習プリントのデザインを参考にしました。実装は一から書いたもので，段数の切り替えや解答表示の切り替えなどの機能は独自に追加したものです。
+
+なお，この手引きの執筆とパッケージのコードの点検には生成AI（Claude）の助けを借りました。内容はすべて作者が確認しています。
+% TODO: 参考にしたもの・お世話になったパッケージ（tcolorbox，TikZ など）があれば追記
+
+% ------------------------------------------------------------
+\section{ライセンス}
+% TODO: 公開するライセンスを決めて記入（例：MIT License，LPPL 1.3c）
+このパッケージは，LaTeX Project Public License（LPPL）バージョン1.3c，またはそれ以降のバージョンのもとで公開します。
+ライセンスの全文は\url{https://www.latex-project.org/lppl.txt}にあります。
+
+使用・改変・再配布は自由にできますが，改変したものを配布する場合は，ファイル名を変えるなどして元のパッケージと区別できるようにしてください（詳しくはライセンスの全文を参照してください）。
+
+\section{連絡先}
+% TODO: メールアドレス・GitHubなど
+不具合の報告や要望は\url{https://x.com/itohaaa_1024}までお願いします。
+
+% ------------------------------------------------------------
+\section{更新履歴}
+\begin{itemize}[leftmargin=4\zw]
+  \item[ver.1.0] 初版。
+  \item[ver.1.1] 解答挿入環境の本文がマゼンタで表示されない不具合を修正。問題挿入環境の補足の指定方法を\verb|[ ]|から\verb|< >|に変更（問題文が\verb|[|で始まる場合に補足と誤認される不具合の修正）。
+\end{itemize}
+
+\end{分割}
+\end{document}

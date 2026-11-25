@@ -1,0 +1,22 @@
+# TeX 中間・補助ファイル
+*.aux
+*.log
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex*
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.dvi
+*.xdv
+*.nav
+*.snm
+*.vrb
+*.lot
+*.lof
+*.idx
+*.ind
+*.ilg
